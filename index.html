@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maze Runner | ALPHA Edition</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* =================================
+           1. THEME VARIABLES (Dark & Light)
+           ================================= */
+        :root {
+            /* Blue Theme */
+            --theme-hue: 210; 
+            --primary-color: hsl(var(--theme-hue), 70%, 50%); /* Vibrant Blue */
+            --secondary-color: hsl(40, 90%, 60%); /* Amber/Highlight */
+            --danger-color: hsl(0, 70%, 50%); 
+            --success-color: hsl(45, 90%, 55%); /* Gold/Yellow for Trophy */ 
+            
+            /* Light Mode Defaults (Improved Clarity) */
+            --bg-start: #ffffff;
+            --bg-end: #f5f7fa;
+            --card-bg: rgba(255, 255, 255, 0.6);
+            --text-color: #333333;
+            --dark-text-for-highlight: #1e1e2d;
+            --glass-border: rgba(0, 0, 0, 0.1);
+            --box-shadow: 0 4px 15px 0 rgba(0, 0, 0, 0.1);
+            --footer-bg: rgba(0, 0, 0, 0.05);
+            /* Maze Image URL (Placeholder: Replace with your actual maze image URL) */
+            /* --- ESCAPED COLOR (LIGHT MODE) --- */
+            --escaped-color: #008000; /* Dark Green */
+
+            --maze-image-url: url('./light.jpg');
+        }
+
+        /* Dark Mode (Existing Premium Look) */
+        .dark-mode {
+            --bg-start: #1e1e2d;
+            --bg-end: #14141e;
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --text-color: #f0f0f0;
+            --dark-text-for-highlight: #1e1e2d;
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6);
+            --footer-bg: rgba(0, 0, 0, 0.2);
+            /* --- ESCAPED COLOR (DARK MODE) --- */
+            --escaped-color: #00ff00; /* Luminous Green (Neon) */
+
+            --maze-image-url: url('./dark.jpg');
+            input::placeholder,
+                textarea::placeholder {
+                color: #d0caca; /* Standard syntax */
+                opacity: 1; /* Firefox default reduces opacity, so we override it */
+                }
+        }
+
+        /* =================================
+           2. BASE & LAYOUT
+           ================================= */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            
+            /* --- UPDATED BACKGROUND FOR MAZE IMAGE --- */
+            background-image: var(--maze-image-url);
+            background-size: cover;
+            background-position: center;
+            /* Create a dark overlay to maintain readability and dark mode effect */
+            background-color: rgba(0, 0, 0, 0.6); 
+            background-blend-mode: darken; 
+            /* Fallback/light mode adjustment */
+            transition: background-image 0.8s ease, background-color 0.8s ease, color 0.5s ease;
+            
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-color);
+            line-height: 1.6;
+            overflow-x: hidden; 
+        }
+        
+        /* Adjust dark mode blending for better image visibility at night */
+        .dark-mode {
+            background-color: rgba(0, 0, 0, 0.8); /* Darker overlay in dark mode */
+        }
+        
+        /* Add a subtle blur effect to the background image for aesthetics */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: var(--maze-image-url);
+            background-size: cover;
+            background-position: center;
+            filter: blur(2px); /* Subtle blur effect */
+            z-index: -1; /* Place behind the content */
+            transition: opacity 0.8s ease;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 650px;
+            margin: 40px auto;
+            padding: 30px;
+            border-radius: 16px;
+            
+            background: var(--card-bg);
+            box-shadow: var(--box-shadow);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            
+            transition: all 0.5s ease-in-out;
+            z-index: 10; /* Ensure container is above the blurred background */
+        }
+        
+        .container:hover {
+            transform: perspective(1000px) rotateX(1deg) rotateY(1deg);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        h2, h3 {
+            text-align: center;
+            color: var(--primary-color);
+            margin-bottom: 25px;
+            text-shadow: 0 0 2px rgba(0, 0, 0, 0.1);
+            transition: color 0.5s ease;
+        }
+        
+        #game-screen {
+            text-align: center;
+        }
+
+        /* =================================
+           3. UI ELEMENTS
+           ================================= */
+        
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 20px;
+            border: 1px solid var(--glass-border);
+            background: rgba(255, 255, 255, 0.4); 
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 16px;
+            color: var(--text-color);
+            transition: border-color 0.3s, background 0.3s;
+        }
+        input[type="text"]:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 5px var(--primary-color);
+        }
+        
+        button {
+            background: linear-gradient(45deg, var(--primary-color), hsl(var(--theme-hue), 80%, 40%));
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin: 5px;
+            box-shadow: 0 4px 15px -5px hsl(var(--theme-hue), 80%, 60%);
+        }
+
+        button:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 6px 20px -5px hsl(var(--theme-hue), 80%, 60%);
+        }
+
+        .btn-secondary {
+            background: rgba(158, 158, 158, 0.15);
+            color: var(--text-color);
+            box-shadow: none;
+        }
+        .btn-secondary:hover {
+            background: rgba(158, 158, 158, 0.3);
+        }
+
+        .btn-danger {
+            background: linear-gradient(45deg, var(--danger-color), hsl(0, 80%, 40%));
+            box-shadow: 0 4px 15px -5px var(--danger-color);
+        }
+        
+        .btn-group {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        
+        .timer-display {
+            font-size: 5em;
+            font-weight: 200;
+            color: var(--secondary-color);
+            margin: 20px 0;
+            display: block;
+            text-shadow: 0 0 10px rgba(255, 152, 0, 0.5);
+            transition: color 0.5s ease;
+        }
+
+        .paused-timer {
+            color: var(--danger-color);
+            opacity: 0.8;
+            animation: blink 1s infinite;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 0.3; }
+        }
+        
+        .toggle-container {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            z-index: 20; /* Ensure toggle is above all else */
+        }
+
+         .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 28px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #999;
+            transition: .4s;
+            border-radius: 28px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: var(--primary-color);
+        }
+        input:checked + .slider:before {
+            transform: translateX(22px);
+        }
+        
+     
+
+        #result-message {
+            font-size: 1.5em;
+            font-weight: 600;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        #high-score-indicator {
+            text-align: center; 
+        }
+
+        /* =================================
+           4. ANIMATIONS & EFFECTS
+           ================================= */
+
+        @keyframes highscore-pulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7); }
+            70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(255, 193, 7, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 193, 7, 0); }
+        }
+        .new-high-score {
+            animation: highscore-pulse 1.5s infinite;
+            background-color: var(--secondary-color);
+            color: var(--dark-text-for-highlight);
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        .result-icon-container {
+            font-size: 80px;
+            text-align: center;
+            height: 100px;
+            margin-bottom: 30px;
+        }
+        .win-icon {
+            color: var(--success-color);
+            text-shadow: 0 0 15px rgba(255, 215, 0, 0.7);
+            transition: transform 0.2s; 
+        }
+        
+        .confetti-animation {
+            animation: confetti-blast 0.8s ease-out;
+        }
+
+        @keyframes confetti-blast {
+            0% { opacity: 0; transform: scale(0.5) rotate(0deg); }
+            50% { opacity: 1; transform: scale(1.2) rotate(30deg); }
+            100% { opacity: 1; transform: scale(1) rotate(0deg); }
+        }
+
+        .lose-icon {
+            color: var(--danger-color);
+            animation: shake 0.5s ease-in-out 3;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-10px); }
+            40%, 80% { transform: translateX(10px); }
+        }
+
+        /* --- Table & Leaderboard Styling --- */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: rgba(255, 255, 255, 0.05); 
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        th, td {
+            border: 1px solid var(--glass-border);
+            padding: 12px;
+            text-align: left;
+            transition: background 0.3s ease;
+        }
+
+        th {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            text-shadow: 0 0 5px var(--primary-color);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        tr:nth-child(even) {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .highlight-row {
+            background-color: var(--secondary-color) !important; 
+            color: var(--dark-text-for-highlight);
+            font-weight: bold;
+            animation: highlight-in 1s ease-out;
+        }
+        .highlight-row td {
+            border-top: 2px solid var(--secondary-color);
+            border-bottom: 2px solid var(--secondary-color);
+        }
+        @keyframes highlight-in {
+            0% { opacity: 0; transform: scale(0.9) translateY(-20px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        
+        /* =================================
+           5. FOOTER
+           ================================= */
+        footer {
+            margin-top: 40px;
+            padding: 20px;
+            text-align: center;
+            font-size: 0.9em;
+            color: var(--text-color);
+            width: 100%;
+            background: var(--footer-bg);
+            border-top: 1px solid var(--glass-border);
+            transition: background 0.5s, color 0.5s;
+        }
+        .dark-mode footer {
+            color: rgba(240, 240, 240, 0.7);
+        }
+
+    </style>
+</head>
+<body class="dark-mode">
+    
+    <div class="toggle-container">
+        <i class="fas fa-sun" style="color: var(--secondary-color);"></i>
+        <label class="switch">
+            <input type="checkbox" id="darkModeToggle" checked>
+            <span class="slider"></span>
+        </label>
+        <i class="fas fa-moon" style="color: var(--primary-color);"></i>
+    </div>
+
+    <div class="container">
+
+        <div id="login-screen">
+            <h2>Maze Runner <i class="fas fa-dice-d20"></i></h2>
+            <input type="text" id="username" placeholder="Enter your name">
+            <div class="btn-group">
+                <button onclick="startGame()">Start Game</button>
+                <button class="btn-secondary" onclick="showHistoryPrompt()">History</button>
+                <button class="btn-secondary" onclick="showLeaderboard()">Leaderboard</button>
+            </div>
+            <button class="btn-danger" style="width: 100%; margin-top: 20px;" onclick="clearAllScores()">
+                <i class="fas fa-trash"></i> Clear All Scores
+            </button>
+        </div>
+
+        <div id="game-screen" class="hidden">
+            <h3>Running, <span id="player-name"></span>!</h3>
+            <div style="font-size: 1.2em; font-weight: 500;">Time Elapsed (seconds):</div>
+            <span id="timer" class="timer-display">0</span>
+            <div class="btn-group">
+                <button id="pause-button" onclick="togglePause()"><i class="fas fa-pause"></i> Pause</button>
+                <button onclick="endGame('escaped')">Simulate Win <i class="fas fa-flag-checkered"></i></button>
+                <button class="btn-danger" onclick="endGame('lost')">Simulate Loss <i class="fas fa-skull"></i></button>
+            </div>
+        </div>
+
+        <div id="result-screen" class="hidden">
+            <h2 id="result-title">Game Over</h2>
+            <div id="result-icon-container" class="result-icon-container">
+                </div>
+
+            <p id="result-message"></p>
+            <p id="high-score-indicator" class="high-score-indicator hidden">
+                <i class="fas fa-trophy"></i> NEW HIGH SCORE!
+            </p>
+            <div class="btn-group">
+                <button onclick="restartGame()">Play Again</button>
+                <button class="btn-secondary" onclick="showLeaderboard()">View Rank</button>
+            </div>
+        </div>
+
+        <div id="history-prompt" class="hidden">
+            <h2>Search Player History</h2>
+            <input type="text" id="history-username" placeholder="Enter name to view history">
+            <div class="btn-group">
+                <button onclick="loadHistory()">Load History</button>
+                <button class="btn-secondary" onclick="goHome()">Back to Home</button>
+            </div>
+        </div>
+
+        <div id="history-screen" class="hidden">
+            <h2>History for <span id="history-name-display"></span></h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date & Time</th>
+                        <th>Time Taken</th>
+                        <th>Result</th>
+                    </tr>
+                </thead>
+                <tbody id="history-table-body">
+                    </tbody>
+            </table>
+            <div class="btn-group">
+                <button onclick="goHome()">Back to Home</button>
+                <button class="btn-secondary" onclick="clearHistoryTable()">Clear Table View</button>
+            </div>
+        </div>
+
+        <div id="leaderboard-screen" class="hidden">
+            <h2>Global Leaderboard</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Player</th>
+                        <th>Time</th>
+                        <th>Result</th>
+                    </tr>
+                </thead>
+                <tbody id="leaderboard-table-body">
+                    </tbody>
+            </table>
+            <div class="btn-group">
+                <button onclick="goHome()">Back to Home</button>
+            </div>
+        </div>
+
+    </div>
+    
+    <footer>
+        <p style="margin: 0; font-weight: 500;">
+            &copy; 2025 All Rights Reserved. Team ALPHA
+        </p>
+    </footer>
+
+    <script>
+        let timer = 0;
+        let interval;
+        let currentUser = "";
+        let lastGameIndex = -1;
+        let isPaused = false;
+
+        // --- Theme & Dark Mode Functions ---
+
+        document.getElementById('darkModeToggle').addEventListener('change', () => {
+            document.body.classList.toggle('dark-mode');
+        });
+        
+        window.onload = () => {
+            document.body.classList.add('dark-mode');
+            document.getElementById('darkModeToggle').checked = true;
+        };
+
+        // --- Game Core Functions ---
+        
+        function startGame() {
+            const usernameInput = document.getElementById("username");
+            currentUser = usernameInput.value.trim().toLowerCase();
+
+            if (!currentUser || currentUser.length < 2) {
+                alert("Please enter a valid name (at least 2 characters).");
+                return;
+            }
+
+            document.getElementById("login-screen").classList.add("hidden");
+            document.getElementById("game-screen").classList.remove("hidden");
+            document.getElementById("player-name").textContent = usernameInput.value.trim();
+
+            timer = 0;
+            isPaused = false;
+            lastGameIndex = -1;
+            document.getElementById("timer").textContent = timer;
+            document.getElementById("timer").classList.remove('paused-timer');
+            document.getElementById("pause-button").innerHTML = '<i class="fas fa-pause"></i> Pause';
+
+            interval = setInterval(() => {
+                if (!isPaused) {
+                    timer++;
+                    document.getElementById("timer").textContent = timer;
+                }
+            }, 1000);
+        }
+
+        function togglePause() {
+            isPaused = !isPaused;
+            const timerEl = document.getElementById("timer");
+            const pauseBtn = document.getElementById("pause-button");
+
+            if (isPaused) {
+                timerEl.classList.add('paused-timer');
+                pauseBtn.innerHTML = '<i class="fas fa-play"></i> Resume';
+                pauseBtn.style.background = 'var(--secondary-color)';
+                pauseBtn.style.boxShadow = '0 4px 15px -5px var(--secondary-color)';
+            } else {
+                timerEl.classList.remove('paused-timer');
+                pauseBtn.innerHTML = '<i class="fas fa-pause"></i> Pause';
+                pauseBtn.style.background = ''; 
+                pauseBtn.style.boxShadow = '';
+            }
+        }
+
+        function endGame(result) {
+            clearInterval(interval);
+            
+            const resultIconContainer = document.getElementById("result-icon-container");
+            const resultMessageElement = document.getElementById("result-message");
+
+            resultIconContainer.innerHTML = '';
+            resultMessageElement.classList.remove('new-high-score');
+            document.getElementById("high-score-indicator").classList.add('hidden');
+
+            if (result === 'escaped') {
+                document.getElementById("result-title").textContent = "CONGRATULATIONS!";
+                resultMessageElement.textContent = `You ESCAPED in ${timer} seconds!`;
+                
+                resultIconContainer.innerHTML = '<i class="fas fa-trophy win-icon"></i>';
+                const trophyIcon = resultIconContainer.querySelector('.win-icon');
+
+                if (isNewHighScore(currentUser, timer)) {
+                    document.getElementById("high-score-indicator").classList.remove('hidden');
+                    resultMessageElement.classList.add('new-high-score');
+                    
+                    trophyIcon.classList.add('confetti-animation'); 
+
+                } 
+            } else { // lost
+                document.getElementById("result-title").textContent = "GAME OVER";
+                resultMessageElement.textContent = `You LOST after surviving for ${timer} seconds.`;
+                
+                resultIconContainer.innerHTML = '<i class="fas fa-skull-crossbones lose-icon"></i>';
+            }
+            
+            lastGameIndex = saveResult(currentUser, timer, result);
+
+            document.getElementById("game-screen").classList.add("hidden");
+            document.getElementById("result-screen").classList.remove("hidden");
+        }
+
+        function saveResult(name, time, result) {
+            const data = JSON.parse(localStorage.getItem("mazeResults")) || [];
+            
+            const newEntry = { 
+                name, 
+                time, 
+                result, 
+                date: new Date().toISOString(), 
+                id: data.length 
+            };
+            
+            data.push(newEntry);
+            localStorage.setItem("mazeResults", JSON.stringify(data));
+            
+            return newEntry.id;
+        }
+
+        function isNewHighScore(name, newTime) {
+            const data = JSON.parse(localStorage.getItem("mazeResults")) || [];
+            const userWins = data.filter(d => d.name === name && d.result === 'escaped' && d.id !== lastGameIndex);
+            
+            if (userWins.length === 0) {
+                return true; 
+            }
+            
+            const bestTime = Math.min(...userWins.map(d => d.time));
+            return newTime <= bestTime;
+        }
+
+
+        function restartGame() {
+            document.getElementById("result-screen").classList.add("hidden");
+            document.getElementById("login-screen").classList.remove("hidden");
+            document.getElementById("username").value = document.getElementById("player-name").textContent;
+            
+            document.getElementById("result-message").classList.remove('new-high-score');
+            document.getElementById("high-score-indicator").classList.add('hidden');
+            lastGameIndex = -1;
+        }
+        
+        function clearAllScores() {
+            if (confirm("Are you sure you want to permanently clear ALL stored game scores? This cannot be undone.")) {
+                localStorage.removeItem("mazeResults");
+                alert("All scores have been cleared.");
+                goHome();
+            }
+        }
+
+        // --- Navigation Functions ---
+
+        function goHome() {
+            document.getElementById("login-screen").classList.remove("hidden");
+            document.getElementById("history-prompt").classList.add("hidden");
+            document.getElementById("history-screen").classList.add("hidden");
+            document.getElementById("result-screen").classList.add("hidden");
+            document.getElementById("leaderboard-screen").classList.add("hidden");
+        }
+
+        // --- Leaderboard Functions ---
+
+        function getLeaderboardData() {
+            const data = JSON.parse(localStorage.getItem("mazeResults")) || [];
+            
+            data.sort((a, b) => {
+                const aIsWin = a.result === 'escaped';
+                const bIsWin = b.result === 'escaped';
+
+                if (aIsWin && !bIsWin) return -1;
+                if (!aIsWin && bIsWin) return 1;
+
+                if (aIsWin && bIsWin) {
+                    return a.time - b.time;
+                }
+                
+                return b.time - a.time;
+            });
+            
+            return data;
+        }
+
+        function showLeaderboard() {
+            document.getElementById("result-screen").classList.add("hidden");
+            document.getElementById("login-screen").classList.add("hidden");
+            document.getElementById("history-prompt").classList.add("hidden");
+            document.getElementById("history-screen").classList.add("hidden");
+            document.getElementById("leaderboard-screen").classList.remove("hidden");
+
+            const data = getLeaderboardData();
+
+            const tbody = document.getElementById("leaderboard-table-body");
+            tbody.innerHTML = "";
+
+            data.slice(0, 50).forEach((entry, index) => {
+                const rankClass = index < 3 ? 'font-weight: bold; color: #FFD700;' : ''; 
+                
+                const highlightClass = (entry.id === lastGameIndex) ? 'highlight-row' : ''; 
+                
+                const resultColor = entry.result === 'escaped' ? 'var(--escaped-color)' : 'var(--danger-color)';
+
+                const row = `<tr class="${highlightClass}">
+                    <td style="${rankClass}">${index + 1}</td>
+                    <td>${entry.name}</td>
+                    <td>${entry.time}s</td>
+                    <td><span style="color: ${resultColor};">${entry.result.toUpperCase()}</span></td>
+                </tr>`;
+                tbody.innerHTML += row;
+            });
+        }
+        
+        // --- History Functions ---
+
+        function showHistoryPrompt() {
+            document.getElementById("login-screen").classList.add("hidden");
+            document.getElementById("history-prompt").classList.remove("hidden");
+        }
+
+        function loadHistory() {
+            const nameInput = document.getElementById("history-username");
+            const name = nameInput.value.trim().toLowerCase();
+            
+            if (!name || name.length < 2) {
+                alert("Please enter a valid name.");
+                return;
+            }
+
+            const data = JSON.parse(localStorage.getItem("mazeResults")) || [];
+            const userGames = data.filter(d => d.name === name);
+            
+            userGames.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            const tbody = document.getElementById("history-table-body");
+            tbody.innerHTML = "";
+            
+            document.getElementById("history-name-display").textContent = nameInput.value.trim();
+
+            if (userGames.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3">No records found for ${nameInput.value.trim()}</td></tr>`;
+            } else {
+                userGames.forEach(entry => {
+                    const resultStyle = entry.result === 'escaped' ? 'color: var(--success-color);' : 'color: var(--danger-color);';
+                    const row = `<tr>
+                        <td>${new Date(entry.date).toLocaleString()}</td>
+                        <td>${entry.time}s</td>
+                        <td><span style="${resultStyle}">${entry.result.toUpperCase()}</span></td>
+                    </tr>`;
+                    tbody.innerHTML += row;
+                });
+            }
+
+            document.getElementById("history-prompt").classList.add("hidden");
+            document.getElementById("history-screen").classList.remove("hidden");
+        }
+
+        function clearHistoryTable() {
+            document.getElementById("history-table-body").innerHTML = `<tr><td colspan="3">Table View Cleared</td></tr>`;
+        }
+
+    </script>
+</body>
+</html>
